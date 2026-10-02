@@ -1,0 +1,24 @@
+name: Mirror to Gitea
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: "0 6 */2 * *" # hourly; change or remove as desired
+      timezone: 'Asia/Shanghai'
+
+permissions:
+  contents: read
+
+jobs:
+  mirror:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Push all Git refs to Gitea for SHOU Manual Redundancy mirror
+        env:
+          GITEA_TOKEN: ${{ secrets.GITEA_TOKEN_01 }}
+        run: |
+          set -euo pipefail
+          git clone --bare "https://github.com/Conduit-Club/SHOU-Online-Manual.git" repo.git
+          cd repo.git
+          git remote add gitea "https://YOUR_GITEA_USERNAME:${GITEA_TOKEN}@gitea.com/LagrangeWithLight/SHOU-Online-Manual-Mirror.git"
+          git push --mirror gitea
