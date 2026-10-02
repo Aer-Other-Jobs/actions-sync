@@ -21,4 +21,6 @@ jobs:
           git clone --bare "https://github.com/Conduit-Club/SHOU-Online-Manual.git" repo.git
           cd repo.git
           git remote add gitea "https://YOUR_GITEA_USERNAME:${GITEA_TOKEN}@gitea.com/LagrangeWithLight/SHOU-Online-Manual-Mirror.git"
-          git push --mirror gitea
+          git push --mirror gitea \
+          'refs/heads/*:refs/heads/*' \
+          'refs/tags/*:refs/tags/*'
