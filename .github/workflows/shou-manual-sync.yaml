@@ -1,26 +1,68 @@
-name: Mirror SHOU-Online-Manual to Gitea
+name: Mirror SHOU-Online-Manual repository to Gitea
 
 on:
   workflow_dispatch:
+
   schedule:
-    - cron: "0 6 */2 * *" # hourly; change or remove as desired
+    - cron: "0 6 */2 * *" # At 06:00 UTC every second day
       timezone: 'Asia/Shanghai'
 
 permissions:
   contents: read
+  issues: read
+  pull-requests: read
+
+concurrency:
+  group: gitea-sync
+  cancel-in-progress: false
 
 jobs:
-  mirror-refs:
+  sync-metadata:
+    name: Sync issues, pull requests, and releases
     runs-on: ubuntu-latest
+
     steps:
-      - name: Push all Git refs to Gitea for SHOU Manual Redundancy mirror
+      - name: Check out the controller repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.x"
+
+      - name: Install dependency
+        run: pip install requests
+
+      - name: Sync GitHub metadata to Gitea
+        env:
+          GITEA_TOKEN: ${{ secrets.GITEA_TOKEN_01 }}
+          SOURCE_GITHUB_REPO: "Conduit-Club/SHOU-Online-Manual"
+          GITEA_OWNER: "LagrangeWithLight"
+          GITEA_REPO: "SHOU-Online-Manual-Mirror"
+          GITEA_API: "https://gitea.com/api/v1"
+          GH_TOKEN: ${{ github.token }}
+        run: python scripts/sync_metadata.py
+
+  mirror-refs:
+    name: Mirror branches and tags
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Mirror Git refs to Gitea
         env:
           GITEA_TOKEN: ${{ secrets.GITEA_TOKEN_01 }}
         run: |
           set -euo pipefail
-          git clone --bare "https://github.com/Conduit-Club/SHOU-Online-Manual.git" repo.git
+
+          git clone --bare \
+            "https://github.com/Conduit-Club/SHOU-Online-Manual.git" \
+            repo.git
+
           cd repo.git
-          git remote add gitea "https://${GITEA_TOKEN}@gitea.com/LagrangeWithLight/SHOU-Online-Manual-Mirror.git"
+
+          git remote add gitea \
+            "https://${GITEA_TOKEN}@gitea.com/LagrangeWithLight/SHOU-Online-Manual-Mirror.git"
+
           git push --prune gitea \
-          'refs/heads/*:refs/heads/*' \
-          'refs/tags/*:refs/tags/*'
+            'refs/heads/*:refs/heads/*' \
+            'refs/tags/*:refs/tags/*'
