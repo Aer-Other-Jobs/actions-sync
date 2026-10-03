@@ -3,7 +3,7 @@ import re
 import sys
 import requests
 
-GH_TOKEN = os.environ["GH_TOKEN"]
+GH_TOKEN = os.environ.get("GH_TOKEN")
 SOURCE_REPO = os.environ["SOURCE_GITHUB_REPO"]  # owner/repo
 
 GITEA_TOKEN = os.environ["GITEA_TOKEN"]
