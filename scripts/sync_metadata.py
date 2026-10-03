@@ -17,7 +17,9 @@ GITEA_API = os.environ.get(
 GH_API = "https://api.github.com"
 
 MARKER_RE = re.compile(r"<!-- mirror:github:(issue|pr):(\d+) -->")
-SOURCE_LINK_RE = re.compile(r"\n?Original GitHub (?:issue|PR): https?://\S+\s*")
+SOURCE_ATTRIBUTION_RE = re.compile(
+    r"\n?Originally opened by @\S+ on GitHub: https?://\S+\s*"
+)
 
 gh = requests.Session()
 gh.headers.update({
@@ -82,17 +84,21 @@ def marker_for(kind, number):
 
 
 def mirrored_body(source, kind, number):
-    """Build a stable body with a source link and mapping marker."""
+    """Add original GitHub author attribution and a stable mapping marker."""
     body = source.get("body") or ""
 
-    # Strip any old marker/link before adding the current ones.
+    # Remove any previous marker and attribution before rebuilding the body.
     body = MARKER_RE.sub("", body)
-    body = SOURCE_LINK_RE.sub("\n", body).rstrip()
+    body = SOURCE_ATTRIBUTION_RE.sub("\n", body).rstrip()
 
-    item_type = "PR" if kind == "pr" else "issue"
-    source_link = f"Original GitHub {item_type}: {source['html_url']}"
+    author = (source.get("user") or {}).get("login") or "unknown"
+    attribution = (
+        f"Originally opened by @{author} on GitHub: {source['html_url']}"
+    )
 
-    parts = [part for part in (body, source_link, marker_for(kind, number)) if part]
+    parts = [
+        part for part in (body, attribution, marker_for(kind, number)) if part
+    ]
     return "\n\n".join(parts)
 
 
@@ -199,7 +205,6 @@ def sync_github_item(source, existing):
 
     # A PR from a fork can't be created in Gitea unless its source branch
     # has first been made available there. Represent it as a regular issue.
-    pr_data = source["pull_request"]
     head = source.get("head") or {}
     base = source.get("base") or {}
     head_repo = head.get("repo") or {}
@@ -224,7 +229,7 @@ def sync_github_item(source, existing):
     try:
         created = gitea_request("POST", "pulls", json=payload)
 
-        # Explicitly set state after creation; this also handles already-closed PRs.
+        # Explicitly set state after creation for already-closed PRs.
         if state == "closed":
             gitea_request(
                 "PATCH",
