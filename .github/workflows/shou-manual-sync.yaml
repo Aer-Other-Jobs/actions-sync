@@ -20,7 +20,7 @@ jobs:
           set -euo pipefail
           git clone --bare "https://github.com/Conduit-Club/SHOU-Online-Manual.git" repo.git
           cd repo.git
-          git remote add gitea "https://YOUR_GITEA_USERNAME:${GITEA_TOKEN}@gitea.com/LagrangeWithLight/SHOU-Online-Manual-Mirror.git"
+          git remote add gitea "https://${GITEA_TOKEN}@gitea.com/LagrangeWithLight/SHOU-Online-Manual-Mirror.git"
           git push --prune gitea \
           'refs/heads/*:refs/heads/*' \
           'refs/tags/*:refs/tags/*'
