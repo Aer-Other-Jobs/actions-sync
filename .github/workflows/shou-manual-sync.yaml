@@ -1,4 +1,4 @@
-name: Mirror to Gitea
+name: Mirror SHOU-Online-Manual to Gitea
 
 on:
   workflow_dispatch:
@@ -10,7 +10,7 @@ permissions:
   contents: read
 
 jobs:
-  mirror:
+  mirror-refs:
     runs-on: ubuntu-latest
     steps:
       - name: Push all Git refs to Gitea for SHOU Manual Redundancy mirror
